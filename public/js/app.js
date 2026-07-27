@@ -192,11 +192,10 @@ async function loadMovies() {
     const tbody = document.getElementById('movies-table-body');
     tbody.innerHTML = '';
 
-    movies.forEach((movie, index) => {
-      const rank = index + 1;
+    movies.forEach((movie) => {
       tbody.innerHTML += `
         <tr data-id="${movie.id}">
-          <td>${rank}</td>
+          <td>${movie.rank}</td>
           <td>${movie.title}</td>
           <td>${movie.genre}</td>
           <td>${movie.year}</td>
@@ -225,11 +224,10 @@ async function loadGames() {
     const tbody = document.getElementById('games-table-body');
     tbody.innerHTML = '';
 
-    games.forEach((game, index) => {
-      const rank = index + 1;
+    games.forEach((game) => {
       tbody.innerHTML += `
         <tr data-id="${game.id}">
-          <td>${rank}</td>
+          <td>${game.rank}</td>
           <td>${game.title}</td>
           <td>${game.genre}</td>
           <td>${game.year}</td>
@@ -258,11 +256,10 @@ async function loadShows() {
     const tbody = document.getElementById('shows-table-body');
     tbody.innerHTML = '';
 
-    shows.forEach((show, index) => {
-      const rank = index + 1;
+    shows.forEach((show) => {
       tbody.innerHTML += `
         <tr data-id="${show.id}">
-          <td>${rank}</td>
+          <td>${show.rank}</td>
           <td>${show.title}</td>
           <td>${show.genre}</td>
           <td>${show.year}</td>
@@ -428,6 +425,7 @@ document.addEventListener('click', (e) => {
   if (e.target.textContent === 'Edit' && e.target.closest('#movies')) {
     const row = e.target.closest('tr');
     document.getElementById('edit-movie-id').value = row.dataset.id;
+    document.getElementById('edit-movie-rank').value = row.cells[0].textContent;
     document.getElementById('edit-movie-title').value = row.cells[1].textContent;
     document.getElementById('edit-movie-genre').value = row.cells[2].textContent;
     document.getElementById('edit-movie-year').value = row.cells[3].textContent;
@@ -437,6 +435,7 @@ document.addEventListener('click', (e) => {
   if (e.target.textContent === 'Edit' && e.target.closest('#games')) {
     const row = e.target.closest('tr');
     document.getElementById('edit-game-id').value = row.dataset.id;
+    document.getElementById('edit-game-rank').value = row.cells[0].textContent;
     document.getElementById('edit-game-title').value = row.cells[1].textContent;
     document.getElementById('edit-game-genre').value = row.cells[2].textContent;
     document.getElementById('edit-game-year').value = row.cells[3].textContent;
@@ -446,6 +445,7 @@ document.addEventListener('click', (e) => {
   if (e.target.textContent === 'Edit' && e.target.closest('#shows')) {
     const row = e.target.closest('tr');
     document.getElementById('edit-show-id').value = row.dataset.id;
+    document.getElementById('edit-show-rank').value = row.cells[0].textContent;
     document.getElementById('edit-show-title').value = row.cells[1].textContent;
     document.getElementById('edit-show-genre').value = row.cells[2].textContent;
     document.getElementById('edit-show-year').value = row.cells[3].textContent;
@@ -455,7 +455,13 @@ document.addEventListener('click', (e) => {
 
 document.getElementById('save-movie-edit').addEventListener('click', async () => {
   const id = document.getElementById('edit-movie-id').value;
+  const rank = Number(document.getElementById('edit-movie-rank').value);
+  if (!Number.isInteger(rank) || rank < 1 || rank > 10) {
+    alert('Rank must be an integer between 1 and 10.');
+    return;
+  }
   const updatedMovie = {
+    rank,
     title: document.getElementById('edit-movie-title').value,
     genre: document.getElementById('edit-movie-genre').value,
     year: document.getElementById('edit-movie-year').value
@@ -466,19 +472,29 @@ document.getElementById('save-movie-edit').addEventListener('click', async () =>
       method: 'PUT',
       body: JSON.stringify(updatedMovie)
     });
+    const data = await response.json().catch(() => ({}));
     if (response.ok) {
       bootstrap.Modal.getInstance(document.getElementById('editMovieModal')).hide();
       loadMovies();
       alert('Movie updated successfully!');
+    } else {
+      alert(data.error || 'Error updating movie');
     }
   } catch (error) {
     console.error('Error updating movie:', error);
+    alert('Error updating movie');
   }
 });
 
 document.getElementById('save-game-edit').addEventListener('click', async () => {
   const id = document.getElementById('edit-game-id').value;
+  const rank = Number(document.getElementById('edit-game-rank').value);
+  if (!Number.isInteger(rank) || rank < 1 || rank > 10) {
+    alert('Rank must be an integer between 1 and 10.');
+    return;
+  }
   const updatedGame = {
+    rank,
     title: document.getElementById('edit-game-title').value,
     genre: document.getElementById('edit-game-genre').value,
     year: document.getElementById('edit-game-year').value
@@ -489,19 +505,29 @@ document.getElementById('save-game-edit').addEventListener('click', async () => 
       method: 'PUT',
       body: JSON.stringify(updatedGame)
     });
+    const data = await response.json().catch(() => ({}));
     if (response.ok) {
       bootstrap.Modal.getInstance(document.getElementById('editGameModal')).hide();
       loadGames();
       alert('Game updated successfully!');
+    } else {
+      alert(data.error || 'Error updating game');
     }
   } catch (error) {
     console.error('Error updating game:', error);
+    alert('Error updating game');
   }
 });
 
 document.getElementById('save-show-edit').addEventListener('click', async () => {
   const id = document.getElementById('edit-show-id').value;
+  const rank = Number(document.getElementById('edit-show-rank').value);
+  if (!Number.isInteger(rank) || rank < 1 || rank > 10) {
+    alert('Rank must be an integer between 1 and 10.');
+    return;
+  }
   const updatedShow = {
+    rank,
     title: document.getElementById('edit-show-title').value,
     genre: document.getElementById('edit-show-genre').value,
     year: document.getElementById('edit-show-year').value
@@ -512,12 +538,16 @@ document.getElementById('save-show-edit').addEventListener('click', async () => 
       method: 'PUT',
       body: JSON.stringify(updatedShow)
     });
+    const data = await response.json().catch(() => ({}));
     if (response.ok) {
       bootstrap.Modal.getInstance(document.getElementById('editShowModal')).hide();
       loadShows();
       alert('Show updated successfully!');
+    } else {
+      alert(data.error || 'Error updating show');
     }
   } catch (error) {
     console.error('Error updating show:', error);
+    alert('Error updating show');
   }
 });
