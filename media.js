@@ -131,6 +131,84 @@ async function shiftRanksAndSet(resource, userId, itemId, oldRank, newRank) {
   }
 }
 
+/**
+ * Set ranks 1..n for the user's items in the given id order.
+ * Uses temporary negative ranks so UNIQUE (user_id, rank) never collides mid-update.
+ */
+async function reorderRanks(resource, userId, orderedIds) {
+  const pool = getPool();
+  if (!pool) {
+    throw new Error('DATABASE_URL is not set');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const existing = await client.query(
+      `SELECT id FROM ${resource} WHERE user_id = $1 ORDER BY rank ASC`,
+      [userId]
+    );
+    const existingIds = existing.rows.map((r) => r.id);
+
+    if (orderedIds.length !== existingIds.length) {
+      const err = new Error('orderedIds must include every item in the list exactly once');
+      err.status = 400;
+      throw err;
+    }
+
+    const existingSet = new Set(existingIds.map(String));
+    const seen = new Set();
+    for (const id of orderedIds) {
+      const key = String(id);
+      if (!existingSet.has(key) || seen.has(key)) {
+        const err = new Error('orderedIds must include every item in the list exactly once');
+        err.status = 400;
+        throw err;
+      }
+      seen.add(key);
+    }
+
+    // Free unique slots: park each row at a unique negative rank (-id).
+    await client.query(
+      `UPDATE ${resource} SET rank = -id WHERE user_id = $1`,
+      [userId]
+    );
+
+    for (let i = 0; i < orderedIds.length; i++) {
+      const rank = i + 1;
+      if (rank > MAX_RANK) {
+        const err = new Error(`rank must be between ${MIN_RANK} and ${MAX_RANK}`);
+        err.status = 400;
+        throw err;
+      }
+      const result = await client.query(
+        `UPDATE ${resource}
+         SET rank = $1
+         WHERE id = $2 AND user_id = $3
+         RETURNING id`,
+        [rank, orderedIds[i], userId]
+      );
+      if (result.rows.length === 0) {
+        const err = new Error('Not found');
+        err.status = 404;
+        throw err;
+      }
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (_) {
+      // ignore rollback errors
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 function registerMediaRoutes(app) {
   for (const resource of RESOURCES) {
     // List current user's items
@@ -147,6 +225,43 @@ function registerMediaRoutes(app) {
       } catch (err) {
         console.error(`GET /${resource}:`, err.message);
         res.status(500).json({ error: `Could not load ${resource}` });
+      }
+    });
+
+    // Reorder: body { orderedIds: number[] } — full list order → ranks 1..n
+    // Registered before /:id so "reorder" is not captured as an id.
+    app.put(`/${resource}/reorder`, requireAuth, async (req, res) => {
+      try {
+        const raw = req.body && req.body.orderedIds;
+        if (!Array.isArray(raw) || raw.length === 0) {
+          return res.status(400).json({
+            error: 'orderedIds must be a non-empty array of item ids'
+          });
+        }
+
+        const orderedIds = raw.map((v) => Number(v));
+        if (orderedIds.some((n) => !Number.isInteger(n) || n < 1)) {
+          return res.status(400).json({
+            error: 'orderedIds must be a non-empty array of item ids'
+          });
+        }
+
+        await reorderRanks(resource, req.session.userId, orderedIds);
+
+        const result = await query(
+          `SELECT id, title, genre, year, rank
+           FROM ${resource}
+           WHERE user_id = $1
+           ORDER BY rank ASC`,
+          [req.session.userId]
+        );
+        res.json(result.rows);
+      } catch (err) {
+        if (err.status === 400 || err.status === 404) {
+          return res.status(err.status).json({ error: err.message });
+        }
+        console.error(`PUT /${resource}/reorder:`, err.message);
+        res.status(500).json({ error: 'Could not reorder list' });
       }
     });
 

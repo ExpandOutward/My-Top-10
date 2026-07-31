@@ -6,6 +6,9 @@ let games = [];
 let shows = [];
 let currentUser = null;
 
+/** Active Sortable instances keyed by tbody id (recreated after each load). */
+const sortables = {};
+
 // Send session cookie with every request
 function apiFetch(url, options = {}) {
   return fetch(`${API_BASE}${url}`, {
@@ -179,6 +182,86 @@ async function handleLogout() {
 
 // ==================== LOAD FUNCTIONS ====================
 
+function mediaRowHtml(item) {
+  return `
+    <tr data-id="${item.id}">
+      <td class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">⋮⋮</td>
+      <td class="col-rank">${item.rank}</td>
+      <td>${escapeHtml(item.title)}</td>
+      <td>${escapeHtml(item.genre)}</td>
+      <td>${escapeHtml(item.year)}</td>
+      <td>
+        <button type="button" class="btn btn-sm btn-primary">Edit</button>
+        <button type="button" class="btn btn-sm btn-danger">Delete</button>
+      </td>
+    </tr>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Enable drag-and-drop reordering on a list tbody.
+ * On drop, persists full order via PUT /{resource}/reorder and reloads.
+ */
+function setupSortable(tbodyId, resource, reload) {
+  if (typeof Sortable === 'undefined') {
+    console.warn('SortableJS not loaded; drag-and-drop disabled.');
+    return;
+  }
+
+  if (sortables[tbodyId]) {
+    sortables[tbodyId].destroy();
+    delete sortables[tbodyId];
+  }
+
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody || tbody.children.length === 0) {
+    return;
+  }
+
+  sortables[tbodyId] = Sortable.create(tbody, {
+    animation: 150,
+    handle: '.drag-handle',
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    onEnd: async (evt) => {
+      if (evt.oldIndex === evt.newIndex) return;
+
+      const orderedIds = Array.from(tbody.querySelectorAll('tr[data-id]')).map(
+        (row) => Number(row.dataset.id)
+      );
+
+      try {
+        const response = await apiFetch(`/${resource}/reorder`, {
+          method: 'PUT',
+          body: JSON.stringify({ orderedIds })
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          alert(data.error || 'Could not reorder list');
+          reload();
+          return;
+        }
+
+        reload();
+      } catch (error) {
+        console.error('Reorder error:', error);
+        alert('Error reordering list');
+        reload();
+      }
+    }
+  });
+}
+
 async function loadMovies() {
   try {
     const response = await apiFetch('/movies');
@@ -190,22 +273,8 @@ async function loadMovies() {
     if (!Array.isArray(movies)) movies = [];
 
     const tbody = document.getElementById('movies-table-body');
-    tbody.innerHTML = '';
-
-    movies.forEach((movie) => {
-      tbody.innerHTML += `
-        <tr data-id="${movie.id}">
-          <td>${movie.rank}</td>
-          <td>${movie.title}</td>
-          <td>${movie.genre}</td>
-          <td>${movie.year}</td>
-          <td>
-            <button class="btn btn-sm btn-primary">Edit</button>
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+    tbody.innerHTML = movies.map(mediaRowHtml).join('');
+    setupSortable('movies-table-body', 'movies', loadMovies);
   } catch (error) {
     console.error('Error loading movies:', error);
   }
@@ -222,22 +291,8 @@ async function loadGames() {
     if (!Array.isArray(games)) games = [];
 
     const tbody = document.getElementById('games-table-body');
-    tbody.innerHTML = '';
-
-    games.forEach((game) => {
-      tbody.innerHTML += `
-        <tr data-id="${game.id}">
-          <td>${game.rank}</td>
-          <td>${game.title}</td>
-          <td>${game.genre}</td>
-          <td>${game.year}</td>
-          <td>
-            <button class="btn btn-sm btn-primary">Edit</button>
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+    tbody.innerHTML = games.map(mediaRowHtml).join('');
+    setupSortable('games-table-body', 'games', loadGames);
   } catch (error) {
     console.error('Error loading games:', error);
   }
@@ -254,22 +309,8 @@ async function loadShows() {
     if (!Array.isArray(shows)) shows = [];
 
     const tbody = document.getElementById('shows-table-body');
-    tbody.innerHTML = '';
-
-    shows.forEach((show) => {
-      tbody.innerHTML += `
-        <tr data-id="${show.id}">
-          <td>${show.rank}</td>
-          <td>${show.title}</td>
-          <td>${show.genre}</td>
-          <td>${show.year}</td>
-          <td>
-            <button class="btn btn-sm btn-primary">Edit</button>
-            <button class="btn btn-sm btn-danger">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+    tbody.innerHTML = shows.map(mediaRowHtml).join('');
+    setupSortable('shows-table-body', 'shows', loadShows);
   } catch (error) {
     console.error('Error loading shows:', error);
   }
@@ -420,35 +461,47 @@ document.addEventListener('click', async (e) => {
   }
 });
 
-// Edit handlers
+// Edit handlers — fill from in-memory lists (not cell indices; handle column is first).
 document.addEventListener('click', (e) => {
-  if (e.target.textContent === 'Edit' && e.target.closest('#movies')) {
-    const row = e.target.closest('tr');
-    document.getElementById('edit-movie-id').value = row.dataset.id;
-    document.getElementById('edit-movie-rank').value = row.cells[0].textContent;
-    document.getElementById('edit-movie-title').value = row.cells[1].textContent;
-    document.getElementById('edit-movie-genre').value = row.cells[2].textContent;
-    document.getElementById('edit-movie-year').value = row.cells[3].textContent;
+  if (e.target.textContent !== 'Edit' || !e.target.classList.contains('btn-primary')) {
+    return;
+  }
+
+  const row = e.target.closest('tr');
+  if (!row || !row.dataset.id) return;
+
+  if (e.target.closest('#movies')) {
+    const item = movies.find((m) => String(m.id) === String(row.dataset.id));
+    if (!item) return;
+    document.getElementById('edit-movie-id').value = item.id;
+    document.getElementById('edit-movie-rank').value = item.rank;
+    document.getElementById('edit-movie-title').value = item.title;
+    document.getElementById('edit-movie-genre').value = item.genre;
+    document.getElementById('edit-movie-year').value = item.year;
     new bootstrap.Modal(document.getElementById('editMovieModal')).show();
+    return;
   }
 
-  if (e.target.textContent === 'Edit' && e.target.closest('#games')) {
-    const row = e.target.closest('tr');
-    document.getElementById('edit-game-id').value = row.dataset.id;
-    document.getElementById('edit-game-rank').value = row.cells[0].textContent;
-    document.getElementById('edit-game-title').value = row.cells[1].textContent;
-    document.getElementById('edit-game-genre').value = row.cells[2].textContent;
-    document.getElementById('edit-game-year').value = row.cells[3].textContent;
+  if (e.target.closest('#games')) {
+    const item = games.find((g) => String(g.id) === String(row.dataset.id));
+    if (!item) return;
+    document.getElementById('edit-game-id').value = item.id;
+    document.getElementById('edit-game-rank').value = item.rank;
+    document.getElementById('edit-game-title').value = item.title;
+    document.getElementById('edit-game-genre').value = item.genre;
+    document.getElementById('edit-game-year').value = item.year;
     new bootstrap.Modal(document.getElementById('editGameModal')).show();
+    return;
   }
 
-  if (e.target.textContent === 'Edit' && e.target.closest('#shows')) {
-    const row = e.target.closest('tr');
-    document.getElementById('edit-show-id').value = row.dataset.id;
-    document.getElementById('edit-show-rank').value = row.cells[0].textContent;
-    document.getElementById('edit-show-title').value = row.cells[1].textContent;
-    document.getElementById('edit-show-genre').value = row.cells[2].textContent;
-    document.getElementById('edit-show-year').value = row.cells[3].textContent;
+  if (e.target.closest('#shows')) {
+    const item = shows.find((s) => String(s.id) === String(row.dataset.id));
+    if (!item) return;
+    document.getElementById('edit-show-id').value = item.id;
+    document.getElementById('edit-show-rank').value = item.rank;
+    document.getElementById('edit-show-title').value = item.title;
+    document.getElementById('edit-show-genre').value = item.genre;
+    document.getElementById('edit-show-year').value = item.year;
     new bootstrap.Modal(document.getElementById('editShowModal')).show();
   }
 });
