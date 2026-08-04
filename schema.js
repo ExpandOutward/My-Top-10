@@ -10,8 +10,53 @@ async function ensureSchema() {
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_login_at TIMESTAMPTZ
+    );
+  `);
+
+  // Older installs may lack last_login_at
+  await query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'last_login_at'
+      ) THEN
+        ALTER TABLE users ADD COLUMN last_login_at TIMESTAMPTZ;
+      END IF;
+    END $$;
+  `);
+
+  // Login/logout audit trail for support and troubleshooting
+  await query(`
+    CREATE TABLE IF NOT EXISTS session_events (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      username TEXT,
+      event_type TEXT NOT NULL,
+      ip TEXT,
+      user_agent TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS session_events_user_id_idx
+    ON session_events (user_id);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS session_events_username_idx
+    ON session_events (username);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS session_events_created_at_idx
+    ON session_events (created_at DESC);
   `);
 
   // Migrate older installs that used "email" instead of "username"

@@ -51,7 +51,7 @@ app.get('/health', async (req, res) => {
           SELECT table_name
           FROM information_schema.tables
           WHERE table_schema = 'public'
-            AND table_name IN ('users', 'movies', 'games', 'shows')
+            AND table_name IN ('users', 'movies', 'games', 'shows', 'session_events')
           ORDER BY table_name
         `);
         tables = result.rows.map((row) => row.table_name);
