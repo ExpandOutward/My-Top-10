@@ -45,7 +45,7 @@ FROM session_events
 ORDER BY created_at DESC;
 ```
 
-#### List Events According To Username In Descending Order
+#### List Events According To Username (newest first)
 ```sql
 SELECT *
 FROM session_events
