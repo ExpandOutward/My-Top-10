@@ -43,6 +43,7 @@ How do I check login data / user login history using PSQL queries?
 SELECT *
 FROM session_events
 ORDER BY created_at DESC;
+```
 
 #### List Events According To Username In Descending Order
 ```sql
