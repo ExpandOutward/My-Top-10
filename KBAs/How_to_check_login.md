@@ -1,5 +1,7 @@
 # How to check login data with PSQL queries
 
+**Access Control**: Internal
+
 ## Issue
 How do I check login data / user login history using PSQL queries?
 
@@ -12,7 +14,7 @@ How do I check login data / user login history using PSQL queries?
 
 ### Get the PSQL Command
 1. Log in to the Render Dashboard at https://dashboard.render.com/
-2. In the **Projects** portlet, select **My Top 10**
+2. In the **Projects** section, select **My Top 10**
 3. Click **my-top-10.db**
 4. Scroll down to the **Connections** section
 5. Copy the **PSQL Command**
