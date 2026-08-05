@@ -11,7 +11,7 @@ How do I create a new user for the My Top 10 application using Postman?
 
 ## Resolution
 ### Configure Postman
-#### Import Evironment Variables
+#### Import Environment Variables
 1. Open Postman
 2. Click **Environments** > **Import**
 3. Import the **My Top 10 - Admin** environment variables
@@ -27,7 +27,9 @@ How do I create a new user for the My Top 10 application using Postman?
 5. Select **POST**
 6. In the address bar, enter `{{base_url}}/auth/register`
 7. Click the **Headers** tab
-8. Add the **Key** `X-Admin-Secret` with the **Value** `{{admin_key}}`
+8. Add a header: 
+- **Key** `X-Admin-Secret`
+- **Value** `{{admin_key}}`
 9. Click the **Body** tab and paste the JSON code below, updating the **username** and **password** to the desired value
 ```json
 {
