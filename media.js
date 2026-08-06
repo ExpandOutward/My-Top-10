@@ -25,7 +25,7 @@ async function nextAvailableRank(resource, userId) {
   const result = await query(
     `
     SELECT s.r AS rank
-    FROM generate_series($1, $2) AS s(r)
+    FROM generate_series($1::integer, $2::integer) AS s(r)
     WHERE NOT EXISTS (
       SELECT 1 FROM ${resource}
       WHERE user_id = $3 AND rank = s.r
