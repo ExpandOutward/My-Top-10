@@ -12,7 +12,7 @@ The Release Roadmap contains information on future releases, including features,
 
 | Version | Release Date | Highlights |
 |---------|--------------|----------|
-| 4 | TBD | Session capturing (login/logout/failed attempts, last_login_at, admin lookup). Import/Export still pending. |
+| 4 | August 2026 | Session capturing (login/logout/failed attempts, last_login_at, admin lookup). Import/Export still pending. |
 | 3 | July 2026 | Added Postgres for user-specific lists + login (invite-only). Fixed Issue #1 (max 10 items). |
 | 2 | July 2026 | Migrated backend from JSON Server to Express.js for better scalability. |
 | 1 | July 2026 | Initial deployment with HTML/CSS/JS + Bootstrap frontend. |
