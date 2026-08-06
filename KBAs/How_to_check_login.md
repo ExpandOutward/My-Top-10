@@ -52,5 +52,5 @@ ORDER BY created_at DESC;
 SELECT *
 FROM session_events
 WHERE username = 'USER NAME HERE'
-ORDER BY created_at DESC
+ORDER BY created_at DESC;
 ```
