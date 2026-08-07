@@ -9,27 +9,18 @@ How do I check login data / user login history using PSQL queries?
 - Render Dashboard access with permissions to view the Postgres database connection details
 - Local Terminal with `psql` available
 - Database role that can read login/user activity tables
+- Familiarity with [How to access Postgres via Terminal](How_to_access_Postgres.md)
 
 ## Resolution
 
-### Get the PSQL Command
-1. Log in to the Render Dashboard at https://dashboard.render.com/
-2. In the **Projects** section, select **My Top 10**
-3. Click **my-top-10.db**
-4. Scroll down to the **Connections** section
-5. Copy the **PSQL Command**
-
-**Important:** Do not share the PSQL Command. Treat it like a password.
-
-### Run the PSQL Command in Terminal
-1. Open **Terminal** on your device
-2. Paste the PSQL Command and press **Enter**
+1. Access Postgres SQL
+2. Run the queries listed below to pull the respective data
 
 ### Useful Queries
 
 **Table:** `session_events`
 
-**Key fields:**
+#### Key fields
 - `id` – ID of the entry in the `session_events` table
 - `user_id` – ID of the user
 - `username` – Username of the user
