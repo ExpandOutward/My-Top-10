@@ -47,6 +47,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('save-password-btn').addEventListener('click', handleChangePassword);
 
+  document.querySelectorAll('.share-list-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.category;
+      downloadShareCard(category, btn);
+    });
+  });
+
   await checkSession();
 });
 
@@ -604,3 +611,111 @@ document.getElementById('save-show-edit').addEventListener('click', async () => 
     alert('Error updating show');
   }
 });
+
+// ==================== SHARE CARD (client-side PNG) ====================
+
+const SHARE_CATEGORY_LABELS = {
+  movies: 'Movies',
+  games: 'Games',
+  shows: 'Shows'
+};
+
+function getShareListData(category) {
+  if (category === 'movies') return movies;
+  if (category === 'games') return games;
+  if (category === 'shows') return shows;
+  return [];
+}
+
+/**
+ * Fill the off-screen share card from in-memory list data.
+ * Rank + title + year always; genre when present.
+ */
+function populateShareCard(category) {
+  const label = SHARE_CATEGORY_LABELS[category] || category;
+  const items = [...getShareListData(category)].sort(
+    (a, b) => Number(a.rank) - Number(b.rank)
+  );
+
+  document.getElementById('share-card-title').textContent = `My Top 10 ${label}`;
+
+  const usernameEl = document.getElementById('share-card-username');
+  usernameEl.textContent = currentUser?.username
+    ? `@${currentUser.username}`
+    : '';
+
+  const listEl = document.getElementById('share-card-list');
+  listEl.innerHTML = items
+    .map((item) => {
+      const rank = escapeHtml(item.rank);
+      const title = escapeHtml(item.title);
+      const year = escapeHtml(item.year);
+      const genre = item.genre ? escapeHtml(item.genre) : '';
+      const metaParts = [year, genre].filter(Boolean);
+      const meta = metaParts.length
+        ? `<span class="share-card__item-meta">${metaParts.join(' · ')}</span>`
+        : '';
+
+      return `
+        <li class="share-card__item">
+          <span class="share-card__rank">${rank}</span>
+          <span class="share-card__item-body">
+            <span class="share-card__item-title">${title}</span>
+            ${meta}
+          </span>
+        </li>
+      `;
+    })
+    .join('');
+
+  return items.length;
+}
+
+/**
+ * Render the share card to a high-DPI PNG and trigger download.
+ */
+async function downloadShareCard(category, buttonEl) {
+  if (typeof htmlToImage === 'undefined') {
+    alert('Image export library failed to load. Refresh and try again.');
+    return;
+  }
+
+  const count = populateShareCard(category);
+  if (count === 0) {
+    alert('Your list is empty. Add at least one item before downloading.');
+    return;
+  }
+
+  const card = document.getElementById('share-card');
+  const label = SHARE_CATEGORY_LABELS[category] || category;
+  const slug = String(label).toLowerCase().replace(/\s+/g, '-');
+  const filename = `my-top-10-${slug}.png`;
+
+  const originalLabel = buttonEl ? buttonEl.textContent : null;
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Generating…';
+  }
+
+  try {
+    // pixelRatio 2 → retina-friendly (~1440px wide from 720px card)
+    const dataUrl = await htmlToImage.toPng(card, {
+      pixelRatio: 2,
+      cacheBust: true,
+      backgroundColor: '#121218'
+    });
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+  } catch (error) {
+    console.error('Share card export failed:', error);
+    alert('Could not generate the image. Try again.');
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = originalLabel || 'Download image';
+    }
+  }
+}

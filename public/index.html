@@ -225,6 +225,14 @@
         <tbody id="movies-table-body">
         </tbody>
       </table>
+      <div class="mt-3 mb-2">
+        <button type="button"
+          class="btn btn-outline-light btn-sm share-list-btn"
+          data-category="movies"
+          id="share-movies-btn">
+          Download image
+        </button>
+      </div>
     </div>
 
 <!-- Game Section -->
@@ -270,6 +278,14 @@
       <tbody id="games-table-body">
       </tbody>
     </table>
+    <div class="mt-3 mb-2">
+      <button type="button"
+        class="btn btn-outline-light btn-sm share-list-btn"
+        data-category="games"
+        id="share-games-btn">
+        Download image
+      </button>
+    </div>
   </div>
 
   <!-- Show Section -->
@@ -315,9 +331,33 @@
       <tbody id="shows-table-body">
       </tbody>
     </table>
+    <div class="mt-3 mb-2">
+      <button type="button"
+        class="btn btn-outline-light btn-sm share-list-btn"
+        data-category="shows"
+        id="share-shows-btn">
+        Download image
+      </button>
+    </div>
   </div>
 </div>
 </div><!-- /app-panel -->
+
+<!-- Share Card: off-screen template for PNG export (html-to-image). Live tables stay unchanged. -->
+<div id="share-card-wrapper" aria-hidden="true">
+  <div id="share-card" class="share-card">
+    <div class="share-card__accent"></div>
+    <header class="share-card__header">
+      <p class="share-card__brand">My Top 10</p>
+      <h2 id="share-card-title" class="share-card__title">My Top 10 Movies</h2>
+      <p id="share-card-username" class="share-card__username"></p>
+    </header>
+    <ol id="share-card-list" class="share-card__list"></ol>
+    <footer class="share-card__footer">
+      <span class="share-card__footer-site">my-top-10.onrender.com</span>
+    </footer>
+  </div>
+</div>
 
 <!-- Edit Movie Modal -->
 <div class="modal fade" id="editMovieModal" tabindex="-1">
@@ -464,6 +504,8 @@
   </div>
 </div>
 
+<!-- html-to-image: client-side PNG export of the share card -->
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
 <script src="/js/app.js"></script>
 
 </body>
