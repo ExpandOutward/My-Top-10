@@ -75,8 +75,8 @@ The Template is a blank `.csv` file having only headers. Click the **Download Te
 | Media Type| File Name |
 |-|-|
 | Movies  | my-top-10-movies-template.csv  |
-| Games    | my-top-10-movies-template.csv   |
-| Shows    | my-top-10-movies-template.csv   |
+| Games    | my-top-10-games-template.csv   |
+| Shows    | my-top-10-shows-template.csv   |
 
 ### Export CSV
 Click the **Export CSV** button to export the list respective to your chosen media type. 
@@ -84,8 +84,8 @@ Click the **Export CSV** button to export the list respective to your chosen med
 | Media Type| File Name |
 |-|-|
 | Movies  | my-top-10-movies.csv  |
-| Games    | my-top-10-movies.csv   |
-| Shows    | my-top-10-movies.csv   |
+| Games    | my-top-10-games.csv   |
+| Shows    | my-top-10-shows.csv   |
 
 ### Import CSV
 Click the **Import CSV** button to modify the list respective to your chosen media type. The import replaces all items on the list with the content that's included in the file, even if some rows remain the same.
