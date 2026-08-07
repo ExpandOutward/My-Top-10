@@ -1,358 +1,321 @@
 # My Top 10 - API Guide
 
-**Document Version**: 3  
-**Product Version**: 4 (session capture)  
+**Document Version**: 4  
+**Product Version**: 4  
 **Date**: August 2026  
 [Version History](#version-history)
 
-## Index
-- [Authorization](#authorization) <!-- D2/P3 -->
-    - [Log In](#log-in) <!-- D2/P3 -->
-    - [Get Current Login Details](#get-current-login-details) <!-- D2/P3 -->
-    - [Change Password](#change-password) <!-- V2 -->
-    - [Log Out](#log-out) <!-- D2/P3 -->
-- [Support / Admin End Points](#support--admin-end-points) <!-- V4 -->
-    - [Look Up User and Recent Sessions](#look-up-user-and-recent-sessions) <!-- V4 -->
-    - [List Session Events](#list-session-events) <!-- V4 -->
-- [GET End Points](#get-end-points) <!-- D2/P3 -->
-    - [GET List Content](#get-list-content) <!-- D2/P3 -->
-- [POST End Points](#post-end-points) <!-- D2/P3 -->
-    - [POST Content To List](#post-content-to-list) <!-- D2/P3 -->
-- [PUT End Points](#put-end-points) <!-- D2/P3 -->
-    - [Update Existing Content](#update-existing-concent) <!-- D2/P3 -->
+## API Endpoints
+**End Point URL**: `https://my-top-10.onrender.com`  
+[Prerequisites Key](#prerequisites-key) | [More Data (MD) Elaboration](#more-data-elaboration)
 
-## Authorization  <!-- D2/P3 -->
+| Action | Method | Endpoint | Body | Response | Prerequisites |
+|----------|----------|----------|----------|----------|----------|
+| Health check    | GET   | `/health`  | None | [Response](#health-check-response) | None |
+| Register user   | POST   | `/auth/register` | [Body](#register-user-body)| [Response](#register-user-response) | AD, P8 |
+| Log in    | POST   | `/auth/login`  |[Body](#log-in-body) | [Response](#log-in-response) | EC |
+| Log out   | POST  | `/auth/logout`  | None | [Response](#log-out-response)  | LI |
+| Get current user    | GET   | `/auth/me` | None | [Response](#get-current-user-reponse)  | LI |
+| Change password    | POST   | `/auth/change-password` | [Body](#change-password-body) | [Response](#change-password-response)  | LI, P8, EC|
+| Look up user + recent sessions (by ID)  | GET   | `/admin/users/lookup?username=USERID`  | None | [Response](#look-up-user--recent-sessions-response)  | AD, EC |
+| Look up user + recent sessions (by Username)  | GET   | `/admin/users/lookup?user_id=USERNAME`  | None | [Response](#look-up-user--recent-sessions-response)  | AD, EC |
+| List session events   | GET   | `/admin/session-events`  | None | [Response](#list-session-events-response)  | AD |
+| List movies  | GET   | `/movies`  | None | [Response](#list-movies-games-or-shows-response)  | LI, EC |
+| Add a movie  | POST   | `/movies`  | [Body](#add-a-movie-game-or-show-body) | [Response](#add-a-movie-game-or-show-response)  | LI, 10 |
+| Update a movie   | PUT  | `/movies/:id`  | [Body](#update-a-movie-game-or-show-body) | [Response](#update-a-movie-game-or-show-response)  | LI, EC |
+| Delete a movie   | DELETE   | `/movies/:id`  | None | [Response](#delete-a-movie-game-or-show-response)  | LI, EC |
+| Reorder movies   | PUT   | `/movies/reorder`   |   [Body](#reorder-movies-games-or-shows-body)  | [Response](#reorder-movies-games-or-shows-reponse)  | LI, EC, MD |
+| List games  | GET   | `/games`  | None | [Response](#list-movies-games-or-shows-response)  | LI, EC |
+| Add a game  | POST   | `/games`  | [Body](#add-a-movie-game-or-show-body) | [Response](#add-a-movie-game-or-show-response)  | LI, 10 |
+| Update a game   | PUT   | `/games/:id`   |  [Body](#update-a-movie-game-or-show-body) | [Response](#update-a-movie-game-or-show-response)  | LI, EC |
+| Delete a game   | DELETE   | `/games/:id`   | None | [Response](#delete-a-movie-game-or-show-response)  | LI, EC |
+| Reorder games   | PUT  | `/games/reorder`  |   [Body](#reorder-movies-games-or-shows-body)  | [Response](#reorder-movies-games-or-shows-reponse)  | LI, EC, MD |
+| List shows  | GET   | `/shows`  | None | [Response](#list-movies-games-or-shows-response)  | LI, EC |
+| Add a show  | POST   | `/shows`  | [Body](#add-a-movie-game-or-show-body) | [Response](#add-a-movie-game-or-show-response)  | LI, 10 |
+| Update a show   | PUT  | `/shows/:id`   |  [Body](#update-a-movie-game-or-show-body) | [Response](#update-a-movie-game-or-show-response)  | LI, EC |
+| Delete a show   | DELETE   | `/shows/:id`   | None | [Response](#delete-a-movie-game-or-show-response)  | LI, EC |
+| Reorder shows   | PUT  | `/shows/reorder`  |  [Body](#reorder-movies-games-or-shows-body) | [Response](#reorder-movies-games-or-shows-reponse)  | LI, EC, MD |
+|||
 
-### Log In  <!-- D2/P3 -->
+### Prerequisites Key
+| Prerequisite | Code | Description |
+|----------|----------|----------|
+| Admin Only    | AD   | Only accessible by Top 10 Admins |
+| Logged In | LI | User must be logged in via the Login API request |
+| Password Restrictions | P8 | Password must be at least 8 characters |
+| Maximum Entries | 10 | Lists can only contain up to 10 entries |
+| Existing Content | EC | The content must exist to be pulled, changed, or deleted |
+| More Data Required | MD | More data is required for the API Request
+|||
 
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     URL     |      https://my-top-10.onrender.com/auth/login       |
-| Content-Type | application/json |
-| Body | raw / JSON |
+### More Data Elaboration
+| API Request | Data Required | Retrieving Data |
+|----------|----------|----------|
+| Reorder Movies    | Movie ID Numbers   | Run the Get Movies API Request and take note of the IDs |
+| Reorder Games    | Game ID Numbers   | Run the Get Games API Request and take note of the IDs |
+| Reorder Shows    | Show ID Numbers   | Run the Get Shows API Request and take note of the IDs |
+|||
 
-#### Body Text
-```json
+
+## Body Text
+
+### Register User Body
+```json 
 {
-  "username": "username",
-  "password": "password"
+  "username": "desired_username",
+  "password": "desired_password"
 }
-
 ```
 
-#### Response Body
-```json
+### Log In Body
+```json 
 {
-    "id": 1,
-    "username": "user"
+  "username": "your_username",
+  "password": "your_password"
 }
-
 ```
 
-### Get Current Login Details  <!-- D2/P3 -->
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      GET       |
-|     URL     |      https://my-top-10.onrender.com/auth/me       |
-| Content-Type | application/json |
-
-#### Response Body
+### Change Password Body
 ```json
 {
-    "id": 1,
-    "username": "username",
-    "created_at": "2026-07-18T21:42:51.950Z",
-    "last_login_at": "2026-08-04T15:22:10.123Z"
+  "currentPassword": "your_current_password",
+  "newPassword": "your_new_password"
 }
-
 ```
 
-`last_login_at` is updated on each successful login. It may be `null` for accounts that have never signed in.
-
-### Change Password  <!-- D2/P3 -->
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     URL     |      https://my-top-10.onrender.com/auth/change-password       |
-| Content-Type | application/json |
-| Body | raw / JSON |
-
-#### Body Text
+### Add a Movie, Game, or Show Body
 ```json
 {
-  "currentPassword": "currentpassword",
-  "newPassword": "newpassword"
+  "title": "Movie Title",
+  "genre": "Genre",
+  "year": "YYYY"
 }
-
 ```
 
-#### Response Body
+### Update a Movie, Game, or Show Body
+```json 
+{
+  "title": "Updated Title",
+  "genre": "Updated Genre",
+  "year": "YYYY",
+  "rank": "1 - 10 (optional)"
+}
+```
+
+### Reorder Movies, Games, or Shows Body
+**Important**: Run the List APIs to get the IDs needed for the query. Replace the `#` with the object IDs in the order that you wish for them to be presented. Note that these are the IDs, not the rank. The rank is assumed by the order of the IDs.
+```sql
+{
+  "orderedIds": [#, #, #]
+}
+```
+
+## Response Text
+
+### Health Check Response
 ```json
 {
-    "message": "Password updated"
+    "status": "ok",
+    "database": "connected",
+    "databaseUrlConfigured": true,
+    "tables": [
+        "games",
+        "movies",
+        "session_events",
+        "shows",
+        "users"
+    ],
+    "error": null
 }
-
 ```
 
-### Log Out <!-- D2/P3 -->
+### Register User Response
+```json
+{
+    "id": #,
+    "username": "user_name_created",
+    "message": "User created. They can log in with this username and password."
+}
+```
 
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     URL     |      https://my-top-10.onrender.com/auth/logout       |
+### Log In Response
+```json
+{
+    "id": #,
+    "username": "user_name"
+}
+```
 
-
-#### Response Body
+### Log Out Response 
 ```json
 {
     "message": "Logged out"
 }
-
 ```
 
-Successful logins, logouts, and failed login attempts are written to the `session_events` table for support troubleshooting. Closing a browser tab does **not** create a logout event — only an explicit Log Out does.
-
-## Support / Admin End Points  <!-- V4 -->
-
-These endpoints are for invite/admin use (support investigations, account checks). They require the same `X-Admin-Secret` header used for user registration. Do **not** share this secret with end users.
-
-| Header | Value |
-|--------|--------|
-| X-Admin-Secret | Your admin secret (same as account creation) |
-
-### Look Up User and Recent Sessions  <!-- V4 -->
-
-Use this first when a user reports login problems. Returns the account plus their 10 most recent session events.
-
-| Element | Value |
-|----------|-------------|
-| Method | GET |
-| URL | https://my-top-10.onrender.com/admin/users/lookup |
-| Header | X-Admin-Secret |
-| Query | `username` **or** `user_id` |
-
-#### Example
-```
-GET /admin/users/lookup?username=recruiter1
-```
-
-#### Response Body
+### Get Current User Reponse
 ```json
 {
-  "user": {
-    "id": 1,
-    "username": "recruiter1",
-    "created_at": "2026-07-18T21:42:51.950Z",
-    "last_login_at": "2026-08-04T15:22:10.123Z"
-  },
-  "recent_events": [
-    {
-      "id": 42,
-      "event_type": "login",
-      "ip": "203.0.113.10",
-      "user_agent": "Mozilla/5.0 ...",
-      "created_at": "2026-08-04T15:22:10.123Z"
+    "id": #,
+    "username": "user_name",
+    "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ",
+    "last_login_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
+}
+```
+
+### Change Password Response
+```json
+{
+    "message": "Password updated"
+}
+```
+
+### Look Up User + Recent Sessions Response
+```json
+{
+    "user": {
+        "id": #,
+        "username": "username",
+        "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ",
+        "last_login_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
     },
-    {
-      "id": 41,
-      "event_type": "login_failed",
-      "ip": "203.0.113.10",
-      "user_agent": "Mozilla/5.0 ...",
-      "created_at": "2026-08-04T15:21:58.001Z"
-    }
-  ]
+    "recent_events": [
+        {
+            "id": #,
+            "event_type": "logout",
+            "ip": "#.#.#.#",
+            "user_agent": "Device/App Info",
+            "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
+        },
+        {
+            "id": #,
+            "event_type": "login",
+            "ip": "#.#.#.#",
+            "user_agent": "Device/App Info",
+            "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
+        }
+    ]
 }
 ```
 
-#### Event types (support reference)
-
-| event_type | Meaning |
-|------------|---------|
-| `login` | Password accepted; session created |
-| `logout` | User explicitly logged out |
-| `login_failed` | Wrong password or unknown username |
-
-**Support tip**: Several `login_failed` rows right before a successful `login` often means a password typo. `login_failed` with no matching user and no later success can mean the username is wrong or the account was never created.
-
-### List Session Events  <!-- V4 -->
-
-Broader history search. Filters are optional and can be combined.
-
-| Element | Value |
-|----------|-------------|
-| Method | GET |
-| URL | https://my-top-10.onrender.com/admin/session-events |
-| Header | X-Admin-Secret |
-| Query (optional) | `username`, `user_id`, `event_type`, `limit` (default 50, max 200) |
-
-#### Examples
-```
-GET /admin/session-events?username=recruiter1&limit=20
-GET /admin/session-events?event_type=login_failed&limit=50
-GET /admin/session-events?user_id=1&event_type=logout
-```
-
-#### Response Body
+### List Session Events Response
 ```json
 {
-  "count": 2,
-  "events": [
-    {
-      "id": 42,
-      "user_id": 1,
-      "username": "recruiter1",
-      "event_type": "login",
-      "ip": "203.0.113.10",
-      "user_agent": "Mozilla/5.0 ...",
-      "created_at": "2026-08-04T15:22:10.123Z"
-    }
-  ]
+    "count": 13,
+    "events": [
+        {
+            "id": #,
+            "user_id": #,
+            "username": "username",
+            "event_type": "logout",
+            "ip": "#.#.#.#",
+            "user_agent": "Device / App info",
+            "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
+        },
+        {
+            "id": #,
+            "user_id": #,
+            "username": "username",
+            "event_type": "logout",
+            "ip": "#.#.#.#",
+            "user_agent": "Device / App info",
+            "created_at": "YYYY-MM-DDTHH:MM:SS.SSSZ"
+        },
+    ]
 }
+
 ```
 
-#### SQL (optional, for deeper investigation)
-
-If you have database access, you can also query directly:
-
-```sql
--- Recent activity for a user
-SELECT event_type, ip, user_agent, created_at
-FROM session_events
-WHERE username = 'recruiter1'
-ORDER BY created_at DESC
-LIMIT 25;
-
--- Last login timestamp on the account
-SELECT id, username, last_login_at, created_at
-FROM users
-WHERE username = 'recruiter1';
-```
-
-##  GET End points  <!-- D2/P3 -->
-The GET End Points display all of the list details respective of the chosen end point.
-
-**Important**: These API calls require authentication. Log in to the API server first (via Postman or your preferred client).
-
-### GET List Content  <!-- D2/P3 -->
-
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      GET       |
-|     Movies URL     |      https://my-top-10.onrender.com/movies       |
-|     Games URL     |      https://my-top-10.onrender.com/games       |
-|     Shows URL     |      https://my-top-10.onrender.com/shows       |
-
-#### Response Body (Movies)
+### List Movies, Games, or Shows Response
 ```json
 [
     {
-        "id": 1,
-        "title": "Halloween",
-        "genre": "Horror",
-        "year": "1978"
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": #
     },
     {
-        "id": 2,
-        "title": "Never Hike In The Snow",
-        "genre": "Horror",
-        "year": "2021"
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": #
+    },
+    {
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": #
     }
 ]
+
 ```
 
-## POST End Points  <!-- D2/P3 -->
-
-The POST End Points allow users to add content to lists through API calls.
-
-**Important**: These API calls require authentication. Log in to the API server first (via Postman or your preferred client).
-
-### POST Content To List  <!-- D2/P3 -->
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     Movies URL     |      https://my-top-10.onrender.com/movies       |
-|     Games URL     |      https://my-top-10.onrender.com/games       |
-|     Shows URL     |      https://my-top-10.onrender.com/shows       |
-| Content-Type | application/json |
-| Body | raw / JSON |
-
-#### Request Body
-```JSON
+### Add A Movie, Game, or Show Response
+```json
 {
+    "id": #,
     "title": "Title",
     "genre": "Genre",
-    "year": Year
+    "year": "YYYY",
+    "rank": #
 }
 ```
 
-#### Response Body
-```JSON
+### Update A Movie, Game, or Show Response
+```json
 {
-    "id": 1,
-    "title": "LOST",
-    "genre": "Mystery",
-    "year": "2002"
-}
-```
-
-## PUT End Points <!-- D2/P3 -->
-
-### Update Existing Content <!-- D2/P3 -->
-Replace the `#` with the `id` of the object that you would like to update.
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     Movies URL     |      https://my-top-10.onrender.com/movies/#       |
-|     Games URL     |      https://my-top-10.onrender.com/games/#       |
-|     Shows URL     |      https://my-top-10.onrender.com/shows/#       |
-| Content-Type | application/json |
-| Body | raw / JSON |
-
-#### Request Body
-```JSON
-{
-    "title": "Title",
+    "id": #,
+    "title": "New Title",
     "genre": "Genre",
-    "year": Year
+    "year": "YYYY",
+    "rank": #
 }
 ```
 
-#### Response Body
-```JSON
-{
-    "id": 1,
-    "title": "Halloween",
-    "genre": "Horror",
-    "year": "2018"
-}
-```
-
-## DELETE End Points <!-- D2/P3 -->
-
-### Delete Content <!-- D2/P3 -->
-Replace the `#` with the `id` of the object that you would like to delete.
-
-| Element | Value |
-|----------|-------------|
-|     Method     |      POST       |
-|     Movies URL     |      https://my-top-10.onrender.com/movies/#       |
-|     Games URL     |      https://my-top-10.onrender.com/games/#       |
-|     Shows URL     |      https://my-top-10.onrender.com/shows/#       |
-
-#### Response Body
-```JSON
+### Delete A Movie, Game, or Show Response
+```json
 {
     "message": "Deleted"
 }
 ```
 
+### Reorder Movies, Games, or Shows Reponse
+```json
+[
+    {
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": 1
+    },
+    {
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": 2
+    },
+    {
+        "id": #,
+        "title": "Title",
+        "genre": "Genre",
+        "year": "YYYY",
+        "rank": 3
+    }
+]
+```
+
 ## Version History
+
+### Version 4
+#### August 2026
+- Updated documentation to align with product v4.
+- Replaced index with table listing each API endpoint
 
 ### Version 3
 #### August 2026
