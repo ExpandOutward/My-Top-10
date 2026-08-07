@@ -252,3 +252,27 @@ body {
 .share-card--light .share-card__footer-site {
   color: #9e9eab;
 }
+
+/* CSV import modal */
+.csv-import-errors {
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.csv-import-errors li {
+  margin-bottom: 0.4rem;
+}
+
+.csv-import-errors code {
+  color: #f0d78c;
+  font-size: 0.85em;
+}
+
+.csv-import-preview {
+  padding-left: 1.25rem;
+  font-size: 0.95rem;
+}
+
+.csv-import-preview li {
+  margin-bottom: 0.35rem;
+}
