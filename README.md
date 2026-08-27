@@ -1,3 +1,6 @@
+# UPDATE
+I have decided to end  my job search and start a business. This project was my attempt to stand out in the job market. I am going to keep this project on my GitHub but neither the Application nor the APIs will work. 
+This project was designed to demonstrate my skills as a Support Engineer. 
 # My Top 10 - A Customer Support Simulation
 "My Top 10" is a simple application that acts as a focal point in a simulated support environment that I built out to showcase my knowledge, skills, and approach to application support. The end-to-end effort allows me to demonstrate a wide range of skills in real-time. This `README` acts as a guide for recruiters, hiring managers, and/or anyone who would like to use this project for learning or inspiration. 
 
